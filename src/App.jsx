@@ -9,7 +9,7 @@ export default function App() {
   const [textEnabled, setTextEnabled] = useState(true)
   const [textMultiplier, setTextMultiplier] = useState(3)
   const [elemEnabled, setElemEnabled] = useState(true)
-  const [elemMultiplier, setElemMultiplier] = useState(3)
+  const [elemMultiplier, setElemMultiplier] = useState(2)
   const [excludeSelectors, setExcludeSelectors] = useState("")
   const [status, setStatus] = useState(null)
 
