@@ -125,7 +125,7 @@ export default function App() {
         <textarea
           value={excludeSelectors}
           onChange={e => setExcludeSelectors(e.target.value)}
-          placeholder="header, #hoge, .parent-wrap"
+          placeholder="header, #about, .parent-wrap"
           rows={2}
           className="w-full rounded-md border border-input bg-background px-2.5 py-1.5 text-xs font-mono placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring resize-y"
           style={{ minHeight: "3rem" }}
