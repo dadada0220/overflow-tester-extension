@@ -217,8 +217,42 @@ function runOverflowTest({ textEnabled, textMultiplier, elemEnabled, elemMultipl
     })
   }
 
-  // --- Element duplication (all groups) ---
+  // --- Element duplication ---
   if (elemEnabled) {
+    // 兄弟要素の「同一セレクタ」判定用（tag + ソート済み class）
+    function elementKey(el) {
+      const tag = el.tagName.toLowerCase()
+      const classes = Array.from(el.classList).sort()
+      return classes.length ? `${tag}.${classes.join(".")}` : tag
+    }
+
+    // 直下の子要素を左から走査し、連続して同一セレクタの run のみグループ化
+    function findConsecutiveGroups(children) {
+      const groups = []
+      let i = 0
+      while (i < children.length) {
+        const key = elementKey(children[i])
+        let j = i + 1
+        while (j < children.length && elementKey(children[j]) === key) {
+          j++
+        }
+        const run = children.slice(i, j)
+        if (run.length >= 2) groups.push(run)
+        i = j
+      }
+      return groups
+    }
+
+    function elementDepth(el) {
+      let depth = 0
+      let current = el
+      while (current && current !== document.body) {
+        depth++
+        current = current.parentElement
+      }
+      return depth
+    }
+
     const allParents = document.body.querySelectorAll("*")
     const groups = []
 
@@ -229,44 +263,14 @@ function runOverflowTest({ textEnabled, textMultiplier, elemEnabled, elemMultipl
       const children = Array.from(parent.children).filter(c => !isExcluded(c))
       if (children.length < 2) return
 
-      let bestGroup = null
-      let bestScore = 0
-
-      // Group by tag
-      const byTag = {}
-      children.forEach(child => {
-        const key = child.tagName
-        if (!byTag[key]) byTag[key] = []
-        byTag[key].push(child)
+      findConsecutiveGroups(children).forEach(group => {
+        groups.push({ parent, group })
       })
-      Object.values(byTag).forEach(group => {
-        if (group.length >= 2 && group.length > bestScore) {
-          bestScore = group.length
-          bestGroup = group
-        }
-      })
-
-      // Group by class (first class name)
-      const byClass = {}
-      children.forEach(child => {
-        const cls = child.classList[0]
-        if (!cls) return
-        if (!byClass[cls]) byClass[cls] = []
-        byClass[cls].push(child)
-      })
-      Object.values(byClass).forEach(group => {
-        if (group.length >= 2 && group.length > bestScore) {
-          bestScore = group.length
-          bestGroup = group
-        }
-      })
-
-      if (bestGroup) {
-        groups.push({ parent, group: bestGroup })
-      }
     })
 
-    // DOMスナップショット後に一括クローン（処理中のDOM変更が再収集に影響しないよう）
+    // 深い階層から複製（親複製時に子の増殖結果が clone に含まれるようにする）
+    groups.sort((a, b) => elementDepth(b.parent) - elementDepth(a.parent))
+
     groups.forEach(({ parent, group }) => {
       const cloneCount = group.length * (elemMultiplier - 1)
       const template = group[group.length - 1]
